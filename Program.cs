@@ -5,6 +5,7 @@ using System.Net;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
+
 namespace ProxyGenerator
 {
     class Program
@@ -42,34 +43,38 @@ namespace ProxyGenerator
                 Console.Clear();
                 goto start;
             }
-           
-            if (selection == 1)
+            string[] proxyurls;
+           switch (selection)
             {
-                Console.WriteLine("Getting HTTP Proxies!");
-                WriteProxy2("https://api.proxyscrape.com/?request=getproxies&proxytype=http&timeout=10000&country=all&ssl=all&anonymity=all", "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt", "HTTP");
-            }
-            if (selection == 2)
-            {
-                Console.WriteLine("Getting Socks4 Proxies!");
-                WriteProxy("https://api.proxyscrape.com/?request=getproxies&proxytype=socks4&timeout=10000&country=all", "Socks4");
-            }
-            if (selection == 3)
-            {
-                Console.WriteLine("Getting Socks5 Proxies!");
-                WriteProxy("https://api.proxyscrape.com/?request=getproxies&proxytype=socks5&timeout=10000&country=all", "Socks5");
-            }
-            
-            if (selection == 4)
-            {
-                if (!File.Exists("good_proxies.txt"))
-                {
-                    File.Create("good_proxies.txt").Close();
-                }
-                if (!File.Exists("bad_proxies.txt"))
-                {
-                    File.Create("bad_proxies.txt").Close();
-                }
-                CheckProxies();
+                case 1:
+                    Console.WriteLine("Getting HTTP Proxies!");
+                    proxyurls = new string[2]{ "https://api.proxyscrape.com/?request=getproxies&proxytype=http&timeout=10000&country=all&ssl=all&anonymity=all", "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt" };
+                    WriteProxies(proxyurls, "HTTP");
+                    break;
+
+                case 2:
+                    Console.WriteLine("Getting Socks4 Proxies!");
+                    proxyurls = new string[1]{ "https://api.proxyscrape.com/?request=getproxies&proxytype=socks4&timeout=10000&country=all" };
+                    WriteProxies(proxyurls, "Socks4");
+                    break;
+
+                case 3:
+                    Console.WriteLine("Getting Socks5 Proxies!");
+                    proxyurls = new string[1]{ "https://api.proxyscrape.com/?request=getproxies&proxytype=socks5&timeout=10000&country=all" };
+                    WriteProxies(proxyurls, "Socks5");
+                    break;
+
+                case 4:
+                    if (!File.Exists("good_proxies.txt"))
+                    {
+                        File.Create("good_proxies.txt").Close();
+                    }
+                    if (!File.Exists("bad_proxies.txt"))
+                    {
+                        File.Create("bad_proxies.txt").Close();
+                    }
+                    CheckProxies();
+                    break;
             }
             }
         public static int good { get; set; }
@@ -98,22 +103,21 @@ namespace ProxyGenerator
             foreach (string proxy in proxies)
             {
                 Thread.Sleep(800);
-                string[] data = proxy.Split(':');
-                if (ProxyCheck(data[0], int.Parse(data[1])) == true)
+                if (ProxyCheck(proxy) == true)
                 {
-                    string already = File.ReadAllText("good_proxies.txt");
+                    string append = File.ReadAllText("good_proxies.txt");
                     using (StreamWriter writer = new StreamWriter("good_proxies.txt"))
                     {
-                        writer.WriteLine(already + data[0] + ":" + data[1]);
+                        writer.WriteLine(append + proxy);
                     }
                     good++;
                 }
                 else
                 {
-                    string already = File.ReadAllText("bad_proxies.txt");
+                    string append = File.ReadAllText("bad_proxies.txt");
                     using (StreamWriter writer = new StreamWriter("bad_proxies.txt"))
                     {
-                        writer.WriteLine(already + data[0] + ":" + data[1]);
+                        writer.WriteLine(append + proxy);
                     }
                     bad++;
                 }
@@ -140,8 +144,7 @@ namespace ProxyGenerator
             Console.WriteLine(bad + " bad proxies saved to " + AppDomain.CurrentDomain.BaseDirectory + "bad_proxies.txt");
             Console.ReadKey();
         }
-
-        public static void WriteProxy(string url, string type)
+        static void WriteProxies(string[] url, string type)
         {
             string filename = type + "_proxies.txt";
             if (File.Exists(filename))
@@ -150,10 +153,15 @@ namespace ProxyGenerator
             }
             WebClient webClient = new WebClient();
             webClient.Timeout = 100000;
-            string proxies = webClient.DownloadString(url);
+            string proxylist = "";
+            string[] proxyarray = url;
+            foreach (string proxyurl in proxyarray)
+            {
+                proxylist = proxylist + webClient.DownloadString(proxyurl) + Environment.NewLine;
+            }
             using (StreamWriter writer = new StreamWriter(filename))
             {
-                    writer.Write(proxies);
+                writer.Write(proxylist);
             }
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Blue;
@@ -161,47 +169,27 @@ namespace ProxyGenerator
             Console.WriteLine("Exported " + lineCount + " proxies to: " + AppDomain.CurrentDomain.BaseDirectory + filename);
             Console.ReadKey();
         }
-        
-        public static void WriteProxy2(string url, string url2 ,string type)
+        public static bool ProxyCheck(string ipAddressport)
         {
-            string filename = type + "_proxies.txt";
-            if (File.Exists(filename))
-            {
-                File.Delete(filename);
-            }
-            WebClient webClient = new WebClient();
-            webClient.Timeout = 100000;
-            string proxies = webClient.DownloadString(url);
-            string proxies2 = webClient.DownloadString(url2);
-            using (StreamWriter writer = new StreamWriter(filename))
-            {
-                    writer.Write(proxies);
-                    writer.WriteLine(proxies2);
-            }
-            Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Blue;
-            int lineCount = File.ReadLines(filename).Count();
-            Console.WriteLine("Exported " + lineCount + " proxies to: " + AppDomain.CurrentDomain.BaseDirectory + filename);
-            Console.ReadKey();
-        }
-
-        private static readonly string UserAgent = "Mozilla / 5.0(Windows NT 10.0; Win64; x64) AppleWebKit / 537.36(KHTML, like Gecko) Chrome / 70.0.3538.77 Safari / 537.36";
-        public static bool ProxyCheck(string ipAddress, int port)
-        {
+            string[] data = ipAddressport.Split(':');
+            int port = 0;
             try
             {
-                ICredentials credentials = CredentialCache.DefaultCredentials;
-                IWebProxy proxy = new WebProxy(ipAddress, port);
-                proxy.Credentials = credentials;
-                using (var wc = new WebClient())
-                {
-                    wc.Timeout = 5000;
-                    wc.Proxy = proxy;
-                    wc.Encoding = Encoding.UTF8;
-                    wc.Headers.Add("User-Agent", UserAgent);
-                    string result = wc.DownloadString("http://google.com");
-                    return true;
-                }
+                port = int.Parse(data[1]);
+            }
+            catch
+            {
+                return false;
+            }
+            try
+            {
+                IWebProxy proxy = new WebProxy(data[0], port);
+                WebClient wc = new WebClient();
+                wc.Timeout = 3500;
+                wc.Proxy = proxy;
+                wc.Encoding = Encoding.UTF8;
+                string result = wc.DownloadString("http://ip-api.com/line/?fields=8192");
+                return true;
             }
             catch
             {

@@ -1,0 +1,7 @@
+C:\Users\ProMa\source\repos\ProxyGenerator\bin\Release\ProxyGenerator.exe.config
+C:\Users\ProMa\source\repos\ProxyGenerator\bin\Release\ProxyGenerator.exe
+C:\Users\ProMa\source\repos\ProxyGenerator\bin\Release\ProxyGenerator.pdb
+C:\Users\ProMa\source\repos\ProxyGenerator\obj\Release\ProxyGenerator.csprojAssemblyReference.cache
+C:\Users\ProMa\source\repos\ProxyGenerator\obj\Release\ProxyGenerator.csproj.CoreCompileInputs.cache
+C:\Users\ProMa\source\repos\ProxyGenerator\obj\Release\ProxyGenerator.exe
+C:\Users\ProMa\source\repos\ProxyGenerator\obj\Release\ProxyGenerator.pdb
